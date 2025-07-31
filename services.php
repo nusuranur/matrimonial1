@@ -1,36 +1,10 @@
 <?php
-// Start the session
+// Start session for user authentication
 session_start();
-
-<<<<<<< HEAD
-// Unset all of the session variables
-$_SESSION = array();
-
-// If it's desired to kill the session, also delete the session cookie.
-// Note: This will destroy the session, and not just the session data!
-if (ini_get("session.use_cookies")) {
-    $params = session_get_cookie_params();
-    setcookie(session_name(), '', time() - 42000,
-        $params["path"], $params["domain"],
-        $params["secure"], $params["httponly"]
-    );
+// Placeholder for isloggedin() function
+function isloggedin() {
+    return isset($_SESSION['id']) && !empty($_SESSION['id']);
 }
-
-// Finally, destroy the session.
-session_destroy();
-
-// Redirect to the login page (or any other desired page)
-header("Location: login.php");
-exit;
-?>
-=======
-// Unset all session variables
-$_SESSION = array();
-
-// Destroy the session
-session_destroy();
-
-// Redirect to index.php after 3 seconds (handled in HTML meta tag)
 ?>
 
 <!DOCTYPE html>
@@ -38,9 +12,8 @@ session_destroy();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Meta tag for auto-redirect after 3 seconds -->
-    <meta http-equiv="refresh" content="3;url=index.php">
-    <title>MatchMingle - Logout</title>
+    <meta name="description" content="Explore MatchMingle's services to find your perfect life partner with free and premium features, profile verification, and personalized matchmaking.">
+    <title>Services - MatchMingle</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome for icons -->
@@ -122,24 +95,125 @@ session_destroy();
             color: #333;
         }
 
-        /* Logout Message Section */
-        .logout-section {
+        /* Services Section */
+        .services-section {
             padding: 3em 0;
             background-color: rgba(255, 255, 255, 0.9);
             text-align: center;
-            min-height: calc(100vh - 300px); /* Adjust height to fill space between navbar and footer */
         }
 
-        .logout-section h1 {
+        .services-section h1 {
             color: #c32143;
-            font-size: 2em;
-            margin-bottom: 1em;
+            font-size: 2.5em;
+            margin-bottom: 1.5em;
             font-family: 'Oswald', sans-serif;
         }
 
-        .logout-section p {
-            font-size: 1.2em;
+        .service-card {
+            border: 2px solid transparent;
+            margin-bottom: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            border-color: #f1b458;
+        }
+
+        .service-card .card-body {
+            padding: 2em;
+        }
+
+        .service-card .card-title {
+            font-size: 1.3em;
+            color: #333;
+            font-family: 'Ubuntu', sans-serif;
+            margin-bottom: 0.8em;
+        }
+
+        .service-card .card-text {
+            font-size: 1em;
             color: #555;
+            line-height: 1.6;
+        }
+
+        /* Distinct colors for each service card */
+        .service-card:nth-child(1) {
+            background-color: #ffe6e6; /* Light red for Free Membership */
+            border-color: #c32143;
+        }
+
+        .service-card:nth-child(2) {
+            background-color: #fff5e6; /* Light yellow for Premium Membership */
+            border-color: #f1b458;
+        }
+
+        .service-card:nth-child(3) {
+            background-color: #e6f0ff; /* Light blue for Profile Verification */
+            border-color: #4a90e2;
+        }
+
+        .service-card:nth-child(4) {
+            background-color: #e6ffe6; /* Light green for Personalized Matchmaking */
+            border-color: #2ecc71;
+        }
+
+        .service-card:nth-child(5) {
+            background-color: #f0e6ff; /* Light purple for Privacy & Security */
+            border-color: #9b59b6;
+        }
+
+        .service-card:nth-child(6) {
+            background-color: #ffe6f0; /* Light pink for Mobile App Access */
+            border-color: #e91e63;
+        }
+
+        .btn-custom {
+            background-color: #c32143;
+            color: #fff;
+            border: none;
+            padding: 0.8em 1.5em;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-custom:hover {
+            background-color: #f1b458;
+            color: #333;
+        }
+
+        /* Back Button Container and Styles */
+        .back-button-container {
+            text-align: center;
+            padding: 2em 0;
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.8em 1.5em;
+            background-color: #c32143;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .back-button:hover {
+            background-color: #f1b458;
+            color: #333;
+        }
+
+        .back-button i {
+            margin-right: 0.5em;
         }
 
         /* Footer Styles */
@@ -225,16 +299,29 @@ session_destroy();
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
-            .logout-section {
+            .services-section {
                 padding: 2em 0;
             }
 
-            .logout-section h1 {
-                font-size: 1.5em;
+            .services-section h1 {
+                font-size: 2em;
             }
 
-            .logout-section p {
-                font-size: 1em;
+            .service-card .card-title {
+                font-size: 1.1em;
+            }
+
+            .service-card .card-text {
+                font-size: 0.9em;
+            }
+
+            .back-button-container {
+                padding: 1.5em 0;
+            }
+
+            .back-button {
+                font-size: 0.9em;
+                padding: 0.6em 1.2em;
             }
 
             .footer .col-md-4,
@@ -293,7 +380,7 @@ session_destroy();
                         <a class="nav-link" href="contact.php"><i class="fa fa-envelope"></i> Contacts</a>
                     </li>
                     <?php 
-                    if (isset($_SESSION['id']) && !empty($_SESSION['id'])) {
+                    if (isloggedin()) {
                         $id = $_SESSION['id'];
                         echo "<li class='nav-item'><a class='nav-link' href='userhome.php?id=$id'><i class='fa fa-user'></i> Profile</a></li>";
                         echo "<li class='nav-item'><a class='nav-link' href='logout.php'><i class='fa fa-sign-out'></i> Logout</a></li>";
@@ -307,11 +394,80 @@ session_destroy();
         </div>
     </nav>
 
-    <!-- Logout Message Section -->
-    <div class="logout-section">
-        <h1>Logged Out</h1>
-        <p>You have been logged out. Redirecting to the homepage in 3 seconds...</p>
-        <p>If you are not redirected, <a href="index.php">click here</a>.</p>
+    <!-- Services Section -->
+    <div class="services-section">
+        <h1>Our Services</h1>
+        <div class="container">
+            <div class="row g-4">
+                <!-- Service 1: Free Membership -->
+                <div class="col-md-4">
+                    <div class="card service-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Free Membership</h5>
+                            <p class="card-text">Sign up, create a profile, and browse matches based on preferences like age, religion, and location at no cost.</p>
+                            <a href="register.php" class="btn btn-custom">Join Now</a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Service 2: Premium Membership -->
+                <div class="col-md-4">
+                    <div class="card service-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Premium Membership</h5>
+                            <p class="card-text">Access exclusive features like messaging, contact details, and priority matches with a premium plan.</p>
+                            <a href="pricing.php" class="btn btn-custom">Upgrade Now</a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Service 3: Profile Verification -->
+                <div class="col-md-4">
+                    <div class="card service-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Profile Verification</h5>
+                            <p class="card-text">Build trust with our ID and social media verification process to ensure authentic profiles.</p>
+                            <a href="verification.php" class="btn btn-custom">Learn More</a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Service 4: Personalized Matchmaking -->
+                <div class="col-md-4">
+                    <div class="card service-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Personalized Matchmaking</h5>
+                            <p class="card-text">Receive curated match suggestions based on your lifestyle, values, and preferences.</p>
+                            <a href="matchmaking.php" class="btn btn-custom">Get Started</a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Service 5: Privacy and Security -->
+                <div class="col-md-4">
+                    <div class="card service-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Privacy & Security</h5>
+                            <p class="card-text">Your data is protected with encryption and strict privacy policies for a safe experience.</p>
+                            <a href="privacy.php" class="btn btn-custom">Read More</a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Service 6: Mobile App Access -->
+                <div class="col-md-4">
+                    <div class="card service-card">
+                        <div class="card-body">
+                            <h5 class="card-title">Mobile App Access</h5>
+                            <p class="card-text">Connect with matches anytime, anywhere via our Android and iOS mobile app.</p>
+                            <a href="download.php" class="btn btn-custom">Download Now</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back Button Before Footer -->
+    <div class="back-button-container">
+        <button class="back-button" onclick="window.history.back()">
+            <i class="fa fa-arrow-left"></i> Back
+        </button>
     </div>
 
     <!-- Footer -->
@@ -351,7 +507,7 @@ session_destroy();
             </div>
             <div class="clearfix"></div>
             <div class="copy">
-                <p>Copyright © 2025 Marital. All Rights Reserved | Design by <a href="#">Team NBP</a></p>
+                <p>Copyright © <?php echo date("Y"); ?> Marital. All Rights Reserved | Design by <a href="#">Team NBP</a></p>
             </div>
         </div>
     </div>
@@ -361,4 +517,3 @@ session_destroy();
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
->>>>>>> 9ea47ce (Initial commit with .gitignore)

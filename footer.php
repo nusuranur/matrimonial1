@@ -9,7 +9,11 @@ Join MatchMingle — where meaningful connections begin."</p>
     		<div class="col-md-2 col_2">
     			<h4>Help & Support</h4>
     			<ul class="footer_links">
+<<<<<<< HEAD
     				<li><a href="#">24x7 Live help</a></li>
+=======
+    				<li><a href="livehelp.php">24x7 Live help</a></li>
+>>>>>>> 9ea47ce (Initial commit with .gitignore)
     				<li><a href="contact.php">Contact us</a></li>
     				<li><a href="#">Feedback</a></li>
     				<li><a href="faq.php">FAQs</a></li>

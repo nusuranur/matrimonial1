@@ -1,36 +1,10 @@
 <?php
-// Start the session
+// Simulate session for navigation
 session_start();
-
-<<<<<<< HEAD
-// Unset all of the session variables
-$_SESSION = array();
-
-// If it's desired to kill the session, also delete the session cookie.
-// Note: This will destroy the session, and not just the session data!
-if (ini_get("session.use_cookies")) {
-    $params = session_get_cookie_params();
-    setcookie(session_name(), '', time() - 42000,
-        $params["path"], $params["domain"],
-        $params["secure"], $params["httponly"]
-    );
+// Placeholder for isloggedin() function
+function isloggedin() {
+    return isset($_SESSION['id']) && !empty($_SESSION['id']);
 }
-
-// Finally, destroy the session.
-session_destroy();
-
-// Redirect to the login page (or any other desired page)
-header("Location: login.php");
-exit;
-?>
-=======
-// Unset all session variables
-$_SESSION = array();
-
-// Destroy the session
-session_destroy();
-
-// Redirect to index.php after 3 seconds (handled in HTML meta tag)
 ?>
 
 <!DOCTYPE html>
@@ -38,9 +12,7 @@ session_destroy();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Meta tag for auto-redirect after 3 seconds -->
-    <meta http-equiv="refresh" content="3;url=index.php">
-    <title>MatchMingle - Logout</title>
+    <title>MatchMingle - 24x7 Live Help</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome for icons -->
@@ -122,24 +94,103 @@ session_destroy();
             color: #333;
         }
 
-        /* Logout Message Section */
-        .logout-section {
+        /* Live Help Section */
+        .live-help-section {
             padding: 3em 0;
             background-color: rgba(255, 255, 255, 0.9);
             text-align: center;
-            min-height: calc(100vh - 300px); /* Adjust height to fill space between navbar and footer */
         }
 
-        .logout-section h1 {
+        .live-help-section h1 {
             color: #c32143;
-            font-size: 2em;
-            margin-bottom: 1em;
+            font-size: 2.5em;
+            margin-bottom: 1.5em;
             font-family: 'Oswald', sans-serif;
         }
 
-        .logout-section p {
-            font-size: 1.2em;
-            color: #555;
+        .help-form {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        .form-group {
+            margin-bottom: 1.5em;
+            text-align: left;
+        }
+
+        .form-group label {
+            font-size: 1.1em;
+            color: #333;
+            margin-bottom: 0.5em;
+            display: block;
+            font-family: 'Ubuntu', sans-serif;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.8em;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-control:focus {
+            border-color: #f1b458;
+            outline: none;
+            box-shadow: 0 0 5px rgba(241, 180, 88, 0.5);
+        }
+
+        .submit-button {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.8em 1.5em;
+            background-color: #c32143;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .submit-button:hover {
+            background-color: #f1b458;
+            color: #333;
+        }
+
+        .submit-button i {
+            margin-right: 0.5em;
+        }
+
+        /* Back Button Container and Styles */
+        .back-button-container {
+            text-align: center;
+            padding: 2em 0;
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.8em 1.5em;
+            background-color: #c32143;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .back-button:hover {
+            background-color: #f1b458;
+            color: #333;
+        }
+
+        .back-button i {
+            margin-right: 0.5em;
         }
 
         /* Footer Styles */
@@ -225,16 +276,34 @@ session_destroy();
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
-            .logout-section {
+            .live-help-section {
                 padding: 2em 0;
             }
 
-            .logout-section h1 {
-                font-size: 1.5em;
+            .live-help-section h1 {
+                font-size: 2em;
             }
 
-            .logout-section p {
+            .form-group label {
                 font-size: 1em;
+            }
+
+            .form-control {
+                font-size: 0.9em;
+            }
+
+            .submit-button {
+                font-size: 0.9em;
+                padding: 0.6em 1.2em;
+            }
+
+            .back-button-container {
+                padding: 1.5em 0;
+            }
+
+            .back-button {
+                font-size: 0.9em;
+                padding: 0.6em 1.2em;
             }
 
             .footer .col-md-4,
@@ -293,7 +362,7 @@ session_destroy();
                         <a class="nav-link" href="contact.php"><i class="fa fa-envelope"></i> Contacts</a>
                     </li>
                     <?php 
-                    if (isset($_SESSION['id']) && !empty($_SESSION['id'])) {
+                    if (isloggedin()) {
                         $id = $_SESSION['id'];
                         echo "<li class='nav-item'><a class='nav-link' href='userhome.php?id=$id'><i class='fa fa-user'></i> Profile</a></li>";
                         echo "<li class='nav-item'><a class='nav-link' href='logout.php'><i class='fa fa-sign-out'></i> Logout</a></li>";
@@ -307,11 +376,43 @@ session_destroy();
         </div>
     </nav>
 
-    <!-- Logout Message Section -->
-    <div class="logout-section">
-        <h1>Logged Out</h1>
-        <p>You have been logged out. Redirecting to the homepage in 3 seconds...</p>
-        <p>If you are not redirected, <a href="index.php">click here</a>.</p>
+    <!-- Live Help Section -->
+    <div class="live-help-section">
+        <h1>24x7 Live Help</h1>
+        <div class="help-form">
+            <form action="process_live_help.php" method="POST">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" class="form-control" id="name" name="name" placeholder="Enter your full name" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="number" class="form-control" id="phn" name="phn" placeholder="Enter your phone number" required>
+                </div>
+                <div class="form-group">
+                    <label for="subject">Subject</label>
+                    <input type="text" class="form-control" id="subject" name="subject" placeholder="Enter the subject of your query" required>
+                </div>
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea class="form-control" id="message" name="message" rows="5" placeholder="Describe your issue or query" required></textarea>
+                </div>
+                <button type="submit" class="submit-button">
+                    <i class="fa fa-paper-plane"></i> Submit Query
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Back Button Before Footer -->
+    <div class="back-button-container">
+        <button class="back-button" onclick="window.history.back()">
+            <i class="fa fa-arrow-left"></i> Back
+        </button>
     </div>
 
     <!-- Footer -->
@@ -361,4 +462,3 @@ session_destroy();
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
->>>>>>> 9ea47ce (Initial commit with .gitignore)

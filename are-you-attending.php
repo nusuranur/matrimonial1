@@ -1,36 +1,85 @@
 <?php
-// Start the session
 session_start();
+include_once("includes/dbconn.php");
+include_once("functions.php");
 
-<<<<<<< HEAD
-// Unset all of the session variables
-$_SESSION = array();
-
-// If it's desired to kill the session, also delete the session cookie.
-// Note: This will destroy the session, and not just the session data!
-if (ini_get("session.use_cookies")) {
-    $params = session_get_cookie_params();
-    setcookie(session_name(), '', time() - 42000,
-        $params["path"], $params["domain"],
-        $params["secure"], $params["httponly"]
-    );
+// Check if user is logged in
+if (!isloggedin()) {
+    header("Location: login.php");
+    exit();
 }
 
-// Finally, destroy the session.
-session_destroy();
+$userId = $_SESSION['id'];
 
-// Redirect to the login page (or any other desired page)
-header("Location: login.php");
-exit;
-?>
-=======
-// Unset all session variables
-$_SESSION = array();
+// Fetch current user's details
+if (!isset($_SESSION['username']) || !isset($_SESSION['phone'])) {
+    $sql = "SELECT username, phone FROM users WHERE id = ?";
+    $stmt = mysqli_prepare($conn, $sql);
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, "i", $userId);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $user = mysqli_fetch_assoc($result);
+        if ($user) {
+            $_SESSION['username'] = $user['username'];
+            if (!empty($user['phone'])) {
+                $_SESSION['phone'] = $user['phone'];
+            }
+        }
+        mysqli_stmt_close($stmt);
+    }
+}
 
-// Destroy the session
-session_destroy();
+// Fetch unread message count
+$sql = "SELECT COUNT(*) as unread_count FROM massage WHERE receiver_id = ? AND is_read = 0";
+$stmt = mysqli_prepare($conn, $sql);
+$unreadCount = 0;
+if ($stmt) {
+    mysqli_stmt_bind_param($stmt, "i", $userId);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $unread = mysqli_fetch_assoc($result);
+    $unreadCount = $unread['unread_count'];
+    mysqli_stmt_close($stmt);
+}
 
-// Redirect to index.php after 3 seconds (handled in HTML meta tag)
+// Handle attendance submission
+$attending = isset($_POST['attending']) ? (int)$_POST['attending'] : null;
+$message = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $attending !== null) {
+    $eventId = 1; // Hardcoded event ID
+    $sql = "INSERT INTO attendance (user_id, event_id, attending) VALUES (?, ?, ?) 
+            ON DUPLICATE KEY UPDATE attending = ?";
+    $stmt = mysqli_prepare($conn, $sql);
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, "iiii", $userId, $eventId, $attending, $attending);
+        if (mysqli_stmt_execute($stmt)) {
+            $message = "Thank you! Your attendance has been recorded as " . ($attending ? "Yes" : "No") . ".";
+        } else {
+            $message = "Error recording attendance. Please try again.";
+        }
+        mysqli_stmt_close($stmt);
+    }
+}
+
+// Fetch attendance status
+$eventId = 1;
+$sql = "SELECT attending FROM attendance WHERE user_id = ? AND event_id = ?";
+$stmt = mysqli_prepare($conn, $sql);
+$attendanceStatus = null;
+if ($stmt) {
+    mysqli_stmt_bind_param($stmt, "ii", $userId, $eventId);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $attendance = mysqli_fetch_assoc($result);
+    if ($attendance) {
+        $attendanceStatus = $attendance['attending'];
+    }
+    mysqli_stmt_close($stmt);
+}
+
+mysqli_close($conn);
 ?>
 
 <!DOCTYPE html>
@@ -38,28 +87,25 @@ session_destroy();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Meta tag for auto-redirect after 3 seconds -->
-    <meta http-equiv="refresh" content="3;url=index.php">
-    <title>MatchMingle - Logout</title>
-    <!-- Bootstrap CSS -->
+    <title>MatchMingle - Are You Attending</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <!-- Google Fonts -->
     <link href='//fonts.googleapis.com/css?family=Oswald:300,400,700' rel='stylesheet' type='text/css'>
     <link href='//fonts.googleapis.com/css?family=Ubuntu:300,400,500,700' rel='stylesheet' type='text/css'>
     <style>
         body {
-            margin: 0;
             font-family: 'Ubuntu', sans-serif;
             background: linear-gradient(45deg, #c32143, #f1b458, #c32143, #f1b458);
             background-size: 400% 400%;
             animation: gradient 15s ease infinite;
             color: #333;
-            background-image: url('images/pic1.avif');
             background-repeat: no-repeat;
             background-size: cover;
             background-position: center center;
+            padding-top: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         @keyframes gradient {
@@ -68,10 +114,9 @@ session_destroy();
             100% { background-position: 0% 50%; }
         }
 
-        /* Navigation Bar */
         .navbar {
             background-color: rgba(0, 0, 0, 0.7);
-            font-family: 'Ubuntu', sans-serif;
+            width: 100%;
         }
 
         .navbar-brand {
@@ -96,6 +141,11 @@ session_destroy();
             color: #f1b458 !important;
         }
 
+        .navbar-nav .nav-link.active {
+            color: #f1b458 !important;
+            font-weight: bold;
+        }
+
         .navbar-toggler {
             border-color: #f1b458;
         }
@@ -104,50 +154,79 @@ session_destroy();
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(241, 180, 88, 1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
         }
 
-        /* Dropdown Styles */
-        .dropdown-menu {
-            background-color: #333;
-            border: none;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        }
-
-        .dropdown-menu li a {
+        .header {
+            background-color: rgba(0, 0, 0, 0.7);
             color: #fff;
-            padding: 10px 20px;
-            font-size: 1em;
+            padding: 2em 0;
+            text-align: center;
+            width: 100%;
         }
 
-        .dropdown-menu li a:hover {
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 0.5em;
+            font-family: 'Oswald', sans-serif;
+        }
+
+        .attending-section {
+            flex: 1;
+            padding: 3em 0;
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+
+        .attending-section h2 {
+            color: #c32143;
+            text-align: center;
+            margin-bottom: 1.5em;
+            font-family: 'Oswald', sans-serif;
+        }
+
+        .attending-form {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .attending-form label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .attending-form input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        .attending-form button {
+            background-color: #c32143;
+            color: #fff;
+            border: none;
+            padding: 0.5em 1em;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .attending-form button:hover {
             background-color: #f1b458;
             color: #333;
         }
 
-        /* Logout Message Section */
-        .logout-section {
-            padding: 3em 0;
-            background-color: rgba(255, 255, 255, 0.9);
+        .message {
             text-align: center;
-            min-height: calc(100vh - 300px); /* Adjust height to fill space between navbar and footer */
-        }
-
-        .logout-section h1 {
             color: #c32143;
-            font-size: 2em;
-            margin-bottom: 1em;
-            font-family: 'Oswald', sans-serif;
+            margin-top: 10px;
         }
 
-        .logout-section p {
-            font-size: 1.2em;
-            color: #555;
-        }
-
-        /* Footer Styles */
         .footer {
             background-color: #333;
             color: #fff;
             padding: 2em 0;
             font-size: 0.9em;
+            width: 100%;
+            margin-top: auto;
         }
 
         .footer .container {
@@ -223,42 +302,9 @@ session_destroy();
             clear: both;
         }
 
-        /* Responsive adjustments */
         @media (max-width: 768px) {
-            .logout-section {
-                padding: 2em 0;
-            }
-
-            .logout-section h1 {
-                font-size: 1.5em;
-            }
-
-            .logout-section p {
-                font-size: 1em;
-            }
-
-            .footer .col-md-4,
-            .footer .col-md-2 {
-                margin-bottom: 1.5em;
-                text-align: center;
-            }
-
-            .footer_social {
-                display: flex;
-                justify-content: center;
-                gap: 1em;
-            }
-
-            .navbar-nav {
-                text-align: center;
-            }
-
-            .navbar-nav .nav-link {
-                margin: 0.5em 0;
-            }
-
-            .dropdown-menu {
-                text-align: center;
+            .attending-section {
+                padding: 1em 0;
             }
         }
     </style>
@@ -272,46 +318,62 @@ session_destroy();
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-                <ul class="nav navbar-nav">
+                <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="index.php"><i class="fa fa-home"></i> Home</a>
+                        <a class="nav-link" href="register.php">Register Now</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="about.php"><i class="fa fa-info-circle"></i> About</a>
+                        <a class="nav-link" href="login.php">Login</a>
                     </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fa fa-search"></i> Search
+                    <li class="nav-item">
+                        <a class="nav-link" href="blog.php">View Blog</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="messages.php">
+                            Messages
+                            <?php if ($unreadCount > 0): ?>
+                                <span class="notification-badge"><?php echo $unreadCount; ?></span>
+                            <?php endif; ?>
                         </a>
-                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="search.php">Regular Search</a></li>
-                            <li><a class="dropdown-item" href="search-id.php">Search By Profile ID</a></li>
-                            <li><a class="dropdown-item" href="faq.php">Faq</a></li>
-                        </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="contact.php"><i class="fa fa-envelope"></i> Contacts</a>
+                        <a class="nav-link" href="matchright.php">Browse Profiles</a>
                     </li>
-                    <?php 
-                    if (isset($_SESSION['id']) && !empty($_SESSION['id'])) {
-                        $id = $_SESSION['id'];
-                        echo "<li class='nav-item'><a class='nav-link' href='userhome.php?id=$id'><i class='fa fa-user'></i> Profile</a></li>";
-                        echo "<li class='nav-item'><a class='nav-link' href='logout.php'><i class='fa fa-sign-out'></i> Logout</a></li>";
-                    } else {
-                        echo "<li class='nav-item'><a class='nav-link' href='login.php'><i class='fa fa-sign-in'></i> Login</a></li>";
-                        echo "<li class='nav-item'><a class='nav-link' href='register.php'><i class='fa fa-user-plus'></i> Register</a></li>";
-                    }
-                    ?>
+                    <li class="nav-item">
+                        <a class="nav-link" href="search-username.php">Search by Username</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="matchright.php">Matchright</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="are-you-attending.php">Are You Attending</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="logout.php">Logout</a>
+                    </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Logout Message Section -->
-    <div class="logout-section">
-        <h1>Logged Out</h1>
-        <p>You have been logged out. Redirecting to the homepage in 3 seconds...</p>
-        <p>If you are not redirected, <a href="index.php">click here</a>.</p>
+    <div class="header">
+        <h1>Are You Attending</h1>
+    </div>
+
+    <!-- Main Content -->
+    <div class="attending-section">
+        <h2>RSVP for the Event</h2>
+        <form class="attending-form" method="POST" action="are-you-attending.php">
+            <div>
+                <label>Are you attending the matrimonial event?</label><br>
+                <input type="radio" name="attending" value="1" <?php echo $attendanceStatus === 1 ? 'checked' : ''; ?>> Yes<br>
+                <input type="radio" name="attending" value="0" <?php echo $attendanceStatus === 0 ? 'checked' : ''; ?>> No
+            </div>
+            <button type="submit">Submit</button>
+        </form>
+        <?php if ($message): ?>
+            <p class="message"><?php echo htmlspecialchars($message); ?></p>
+        <?php endif; ?>
     </div>
 
     <!-- Footer -->
@@ -356,9 +418,7 @@ session_destroy();
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-</html>
->>>>>>> 9ea47ce (Initial commit with .gitignore)
+</html>S

@@ -1,36 +1,36 @@
 <?php
-// Start the session
 session_start();
+include_once("includes/dbconn.php");
+include_once("functions.php");
 
-<<<<<<< HEAD
-// Unset all of the session variables
-$_SESSION = array();
-
-// If it's desired to kill the session, also delete the session cookie.
-// Note: This will destroy the session, and not just the session data!
-if (ini_get("session.use_cookies")) {
-    $params = session_get_cookie_params();
-    setcookie(session_name(), '', time() - 42000,
-        $params["path"], $params["domain"],
-        $params["secure"], $params["httponly"]
-    );
+// Check if user is logged in
+if (!isloggedin()) {
+    header("Location: login.php");
+    exit();
 }
 
-// Finally, destroy the session.
-session_destroy();
+$userId = $_SESSION['id'];
 
-// Redirect to the login page (or any other desired page)
-header("Location: login.php");
-exit;
-?>
-=======
-// Unset all session variables
-$_SESSION = array();
+// Fetch unread message count (for navbar badge)
+$sql = "SELECT COUNT(*) as unread_count FROM massage WHERE receiver_id = ? AND is_read = 0";
+$stmt = mysqli_prepare($conn, $sql);
+$unreadCount = 0;
+if ($stmt) {
+    mysqli_stmt_bind_param($stmt, "i", $userId);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $unread = mysqli_fetch_assoc($result);
+    $unreadCount = $unread['unread_count'];
+    mysqli_stmt_close($stmt);
+}
 
-// Destroy the session
-session_destroy();
+mysqli_close($conn);
 
-// Redirect to index.php after 3 seconds (handled in HTML meta tag)
+// Handle form submission feedback (simulated)
+$message = '';
+if (isset($_GET['status'])) {
+    $message = $_GET['status'] === 'success' ? 'Your message has been sent successfully!' : 'There was an error sending your message. Please try again.';
+}
 ?>
 
 <!DOCTYPE html>
@@ -38,28 +38,25 @@ session_destroy();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Meta tag for auto-redirect after 3 seconds -->
-    <meta http-equiv="refresh" content="3;url=index.php">
-    <title>MatchMingle - Logout</title>
-    <!-- Bootstrap CSS -->
+    <title>MatchMingle - Contact Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <!-- Google Fonts -->
     <link href='//fonts.googleapis.com/css?family=Oswald:300,400,700' rel='stylesheet' type='text/css'>
     <link href='//fonts.googleapis.com/css?family=Ubuntu:300,400,500,700' rel='stylesheet' type='text/css'>
     <style>
         body {
-            margin: 0;
             font-family: 'Ubuntu', sans-serif;
             background: linear-gradient(45deg, #c32143, #f1b458, #c32143, #f1b458);
             background-size: 400% 400%;
             animation: gradient 15s ease infinite;
             color: #333;
-            background-image: url('images/pic1.avif');
             background-repeat: no-repeat;
             background-size: cover;
             background-position: center center;
+            padding-top: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         @keyframes gradient {
@@ -68,10 +65,9 @@ session_destroy();
             100% { background-position: 0% 50%; }
         }
 
-        /* Navigation Bar */
         .navbar {
             background-color: rgba(0, 0, 0, 0.7);
-            font-family: 'Ubuntu', sans-serif;
+            width: 100%;
         }
 
         .navbar-brand {
@@ -96,6 +92,11 @@ session_destroy();
             color: #f1b458 !important;
         }
 
+        .navbar-nav .nav-link.active {
+            color: #f1b458 !important;
+            font-weight: bold;
+        }
+
         .navbar-toggler {
             border-color: #f1b458;
         }
@@ -104,50 +105,78 @@ session_destroy();
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(241, 180, 88, 1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
         }
 
-        /* Dropdown Styles */
-        .dropdown-menu {
-            background-color: #333;
-            border: none;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        }
-
-        .dropdown-menu li a {
+        .header {
+            background-color: rgba(0, 0, 0, 0.7);
             color: #fff;
-            padding: 10px 20px;
-            font-size: 1em;
+            padding: 2em 0;
+            text-align: center;
+            width: 100%;
         }
 
-        .dropdown-menu li a:hover {
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 0.5em;
+            font-family: 'Oswald', sans-serif;
+        }
+
+        .contact-section {
+            flex: 1;
+            padding: 3em 0;
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+
+        .contact-form {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 2em;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-label {
+            font-weight: bold;
+            color: #c32143;
+        }
+
+        .form-control {
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .form-control:focus {
+            border-color: #f1b458;
+            box-shadow: 0 0 5px rgba(241, 180, 88, 0.5);
+        }
+
+        .btn-primary {
+            background-color: #c32143;
+            border: none;
+            padding: 0.75em 1.5em;
+            font-size: 1.1em;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-primary:hover {
             background-color: #f1b458;
             color: #333;
         }
 
-        /* Logout Message Section */
-        .logout-section {
-            padding: 3em 0;
-            background-color: rgba(255, 255, 255, 0.9);
-            text-align: center;
-            min-height: calc(100vh - 300px); /* Adjust height to fill space between navbar and footer */
+        .alert {
+            margin-top: 1em;
         }
 
-        .logout-section h1 {
-            color: #c32143;
-            font-size: 2em;
-            margin-bottom: 1em;
-            font-family: 'Oswald', sans-serif;
+        .g-recaptcha {
+            margin: 1em 0;
         }
 
-        .logout-section p {
-            font-size: 1.2em;
-            color: #555;
-        }
-
-        /* Footer Styles */
         .footer {
             background-color: #333;
             color: #fff;
             padding: 2em 0;
             font-size: 0.9em;
+            width: 100%;
+            margin-top: auto;
         }
 
         .footer .container {
@@ -219,49 +248,17 @@ session_destroy();
             color: #c32143;
         }
 
-        .clearfix {
-            clear: both;
-        }
-
-        /* Responsive adjustments */
         @media (max-width: 768px) {
-            .logout-section {
-                padding: 2em 0;
+            .contact-form {
+                padding: 1em;
             }
-
-            .logout-section h1 {
-                font-size: 1.5em;
-            }
-
-            .logout-section p {
-                font-size: 1em;
-            }
-
-            .footer .col-md-4,
-            .footer .col-md-2 {
-                margin-bottom: 1.5em;
-                text-align: center;
-            }
-
-            .footer_social {
-                display: flex;
-                justify-content: center;
-                gap: 1em;
-            }
-
-            .navbar-nav {
-                text-align: center;
-            }
-
-            .navbar-nav .nav-link {
-                margin: 0.5em 0;
-            }
-
-            .dropdown-menu {
-                text-align: center;
+            .header h1 {
+                font-size: 2em;
             }
         }
     </style>
+    
+    
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -272,46 +269,87 @@ session_destroy();
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-                <ul class="nav navbar-nav">
+                <ul class="navbar-nav">
+                    
+                    
+                  
                     <li class="nav-item">
-                        <a class="nav-link" href="index.php"><i class="fa fa-home"></i> Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="about.php"><i class="fa fa-info-circle"></i> About</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fa fa-search"></i> Search
+                        <a class="nav-link" href="messages.php">
+                            Messages
+                            <?php if ($unreadCount > 0): ?>
+                                <span class="notification-badge"><?php echo $unreadCount; ?></span>
+                            <?php endif; ?>
                         </a>
-                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="search.php">Regular Search</a></li>
-                            <li><a class="dropdown-item" href="search-id.php">Search By Profile ID</a></li>
-                            <li><a class="dropdown-item" href="faq.php">Faq</a></li>
-                        </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="contact.php"><i class="fa fa-envelope"></i> Contacts</a>
+                        <a class="nav-link" href="matchright.php">Browse Profiles</a>
                     </li>
-                    <?php 
-                    if (isset($_SESSION['id']) && !empty($_SESSION['id'])) {
-                        $id = $_SESSION['id'];
-                        echo "<li class='nav-item'><a class='nav-link' href='userhome.php?id=$id'><i class='fa fa-user'></i> Profile</a></li>";
-                        echo "<li class='nav-item'><a class='nav-link' href='logout.php'><i class='fa fa-sign-out'></i> Logout</a></li>";
-                    } else {
-                        echo "<li class='nav-item'><a class='nav-link' href='login.php'><i class='fa fa-sign-in'></i> Login</a></li>";
-                        echo "<li class='nav-item'><a class='nav-link' href='register.php'><i class='fa fa-user-plus'></i> Register</a></li>";
-                    }
-                    ?>
+                    <li class="nav-item">
+                        <a class="nav-link" href="search-id.php">Search by Username</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="are-you-attending.php">Are You Attending</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="media.php">Media</a>
+                    </li>
+                        <li class="nav-item">
+                         <a class="nav-link" href="javascript:history.back()"></i> Back</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="logout.php">Logout</a>
+                    </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Logout Message Section -->
-    <div class="logout-section">
-        <h1>Logged Out</h1>
-        <p>You have been logged out. Redirecting to the homepage in 3 seconds...</p>
-        <p>If you are not redirected, <a href="index.php">click here</a>.</p>
+    <div class="header">
+        <h1>Contact Admin</h1>
+    </div>
+
+    <!-- Contact Section -->
+    <div class="contact-section">
+        <div class="contact-form">
+            <?php if ($message): ?>
+                <div class="alert <?php echo $_GET['status'] === 'success' ? 'alert-success' : 'alert-danger'; ?>" role="alert">
+                    <?php echo htmlspecialchars($message); ?>
+                </div>
+            <?php endif; ?>
+
+            <form action="send-admin-message.php" method="post" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="name" class="form-label">Full Name</label>
+                    <input type="text" class="form-control" id="name" name="name" value="<?php echo isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : ''; ?>" required>
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" required>
+                </div>
+                <div class="mb-3">
+    <label for="phone" class="form-label">Phone Number</label>
+    <input type="tel" class="form-control" id="phone" name="phone" 
+           pattern="^(?:\+880|0)?[17-9][0-9]{9}$" 
+           placeholder="e.g., 01712345678 or +8801712345678" 
+           title="Enter a valid Bangladeshi phone number (e.g., 01712345678 or +8801712345678)" 
+           required>
+</div>
+                <div class="mb-3">
+                    <label for="subject" class="form-label">Subject</label>
+                    <input type="text" class="form-control" id="subject" name="subject" required>
+                </div>
+                <div class="mb-3">
+                    <label for="message" class="form-label">Your Message</label>
+                    <textarea class="form-control" id="message" name="message" rows="6" required></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="attachment" class="form-label">Attach File (e.g., Photo or Document)</label>
+                    <input type="file" class="form-control" id="attachment" name="attachment" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
+                </div>
+                <div class="mb-3 g-recaptcha" data-sitekey="your-recaptcha-site-key-here"></div>
+                <button type="submit" class="btn btn-primary">Send Message</button>
+            </form>
+        </div>
     </div>
 
     <!-- Footer -->
@@ -356,9 +394,7 @@ session_destroy();
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
->>>>>>> 9ea47ce (Initial commit with .gitignore)
